@@ -1,24 +1,47 @@
 "use strict";
-var onBaseClass = bindModuleToPromise('./class/base'),
-	onPropertyList = bindModuleToPromise('./class/property-list'),
-	onEnum = bindModuleToPromise('./class/enum', onBaseClass),
-	onNamespace = bindModuleToPromise('./class/namespace', onBaseClass);
+const __LOG__ = console.log.bind(console);
+const __LOG_ERROR__ = (error) => {
+	__LOG__(error.stack);
+}
 
 module.exports = {
-	initialize: () => {
-		return onNamespace.then((Namespace) => {
-			var __namespace__ = new Namespace()
-				.expose('Base', onBaseClass)
-				.expose('PropertyList', onPropertyList)
-				.expose('Namespace', onNamespace)
-				.expose('Enum', onEnum);
-
-			return __namespace__;
-		});
-	}
+	initialize: initialize,
+	inject: inject
 };
 
-function bindModuleToPromise(location, dependencies) {
+function instantiate(Namespace) {
+	return new Namespace();
+}
+async function inject(config) {
+	const {Promise} = config || self || global;
+}
+
+async function initialize(config) {
+	const {Promise} = config || self || global;
+
+	try {
+		let [Base, PropertyList] = await Promise.all([
+			bindModuleToPromise('./class/base'),
+			bindModuleToPromise('./class/property-list')
+		]);
+
+		let [Enum, Namespace] = await Promise.all([
+			bindModuleToPromise('./class/enum', onBaseClass),
+			bindModuleToPromise('./class/namespace', Base)
+		]);
+	}
+	catch(ex) {
+		__LOG_ERROR__(ex);
+	}
+
+	return new Namespace()
+		.expose('Namespace', Namespace)
+		.expose('Base', Base)
+		.expose('PropertyList', PropertyList)
+		.expose('Enum', Enum);
+}
+
+async function bindModuleToPromise(location, dependencies) {
 	var onLoaded;
 
 	if (dependencies instanceof Array) {
@@ -37,9 +60,5 @@ function bindModuleToPromise(location, dependencies) {
 	}
 	else onLoaded = Promise.resolve(require(location));
 
-	return onLoaded.catch(catchEvaluationException);
-}
-
-function catchEvaluationException(error) {
-	console.log(error.stack);
+	return onLoaded.catch(__LOG_ERROR__);
 }
