@@ -4,7 +4,7 @@ module.exports = (SuperClass) => {
 		? SuperClass : Object;
 
 	var internal = new WeakMap();
-	return class Namespace extends SuperClass {
+	class Namespace extends SuperClass {
 		constructor() {
 			super();
 		}
@@ -16,4 +16,7 @@ module.exports = (SuperClass) => {
 			});
 		}
 	};
+
+	return Namespace;
 };
+
